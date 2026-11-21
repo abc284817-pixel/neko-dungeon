@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>地下城探索紀錄</title>
+<style>
+:root{--bg:#16151c;--panel:#201f29;--panel2:#2a2934;--line:#34323f;--txt:#e9e6f2;--mut:#9a96ab;--acc:#f2c14e;
+--floor:#8d88a3;--wall:#3b3848;--unk:#1d1c24;--E:#2f6b5e;--K:#6a5694;--D:#3a5b86;--B:#8c3b36;--C:#8a6a1d}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.5 system-ui,"PingFang TC","Noto Sans TC",sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:20px;margin:0 0 2px}
+.sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+h2{font-size:15px;margin:0 0 8px}
+button,select,input,textarea{font:inherit;color:var(--txt)}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+button:hover{border-color:var(--acc)}
+button.on{background:var(--acc);color:#1b1a20;border-color:var(--acc);font-weight:700}
+button.danger{color:#f08a7a}
+input,select,textarea{background:#14131a;border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}
+@media(max-width:760px){.main{grid-template-columns:1fr}}
+#map{display:grid;gap:2px;justify-content:center;padding:6px;overflow:auto;max-height:70vh}
+.c{border-radius:3px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;position:relative;cursor:pointer;user-select:none}
+.c.u{background:var(--unk);outline:1px dashed #2c2b36;outline-offset:-1px}
+.c.f{background:var(--floor)}.c.w{background:var(--wall)}
+.c.E{background:var(--E)}.c.K{background:var(--K)}.c.D{background:var(--D)}.c.B{background:var(--B)}.c.C{background:var(--C)}
+.c.v::after{content:"";position:absolute;width:22%;height:22%;border-radius:50%;background:rgba(242,193,78,.55)}
+.c.E.v::after,.c.K.v::after,.c.D.v::after,.c.B.v::after,.c.C.v::after{display:none}
+.c.view{box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+.c.me{box-shadow:inset 0 0 0 3px var(--acc)}
+.c.me::before{content:"";position:absolute;inset:22%;border-radius:50%;background:var(--acc);opacity:.9}
+.stat{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.stat span{background:var(--panel2);border-radius:6px;padding:2px 8px;font-size:13px}
+.pad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,52px);gap:6px;justify-content:center}
+.pad button{font-size:22px;font-weight:700}
+.nb{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,56px);gap:4px;justify-content:center}
+.nb .c{width:56px;height:56px;font-size:15px}
+.tools{display:flex;flex-wrap:wrap;gap:4px}
+.tools button{padding:4px 8px;font-size:13px}
+.lg{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:6px}
+.lg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.log{font-size:13px;color:var(--mut);max-height:120px;overflow:auto;margin:6px 0 0;padding-left:18px}
+.note{color:var(--mut);font-size:13px}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#000c;color:#fff;padding:8px 14px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.show{opacity:1}
+textarea{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.sec{margin-top:10px}
+details summary{cursor:pointer;color:var(--mut);font-size:14px}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>地下城探索紀錄</h1>
+<p class="sub">沒有地圖可以參考時用。每走一步，把遊戲九宮格看到的路和牆點進「九宮格輸入」，工具會自動拼出整張地圖。資料存在這台裝置的瀏覽器裡。</p>
+
+<div class="card">
+<div class="row">
+<label>紀錄：<select id="rec"></select></label>
+<button id="newBtn">＋ 新紀錄</button>
+<button id="delBtn" class="danger">刪除這筆</button>
+</div>
+<div class="row sec" id="newForm" hidden>
+<input id="dName" placeholder="地下城名稱，例如：試煉之塔" size="18">
+<input id="dNote" placeholder="備註，例如：第 1 次" size="12">
+<button id="createBtn" class="on">建立</button>
+<button id="cancelBtn">取消</button>
+</div>
+</div>
+
+<div class="main">
+<div class="card">
+<div class="stat"><span id="sName"></span><span>步數 <b id="sSteps">0</b></span><span>已探索 <b id="sCells">0</b> 格</span></div>
+<div id="map"></div>
+<div class="lg"><span><i style="background:var(--floor)"></i>路</span><span><i style="background:var(--wall)"></i>牆</span><span><i style="background:var(--unk);outline:1px dashed #444"></i>未探索</span><span><i style="background:var(--E)"></i>E 入口</span><span><i style="background:var(--K)"></i>K 鑰匙</span><span><i style="background:var(--D)"></i>D 門扉</span><span><i style="background:var(--B)"></i>B 頭目</span><span><i style="background:var(--C)"></i>C 寶箱</span><span><i style="background:var(--acc);border-radius:50%"></i>目前位置</span></div>
+<p class="note" style="margin:6px 0 0">點地圖上的格子，會用右邊選的「修改工具」改那一格。</p>
+</div>
+
+<div>
+<div class="card">
+<h2>① 九宮格輸入</h2>
+<div class="nb" id="nb"></div>
+<p class="note" style="margin:6px 0 0;text-align:center">照遊戲畫面點：點一下＝路，再點＝牆，再點＝清除</p>
+</div>
+<div class="card">
+<h2>② 移動</h2>
+<div class="pad">
+<span></span><button data-mv="上">↑</button><span></span>
+<button data-mv="左">←</button><button id="undoBtn" style="font-size:13px">復原</button><button data-mv="右">→</button>
+<span></span><button data-mv="下">↓</button><span></span>
+</div>
+<p class="note" style="margin:6px 0 0;text-align:center">電腦也可以用方向鍵或 WASD</p>
+</div>
+<div class="card">
+<h2>③ 腳下這格是…</h2>
+<div class="tools" id="here">
+<button data-t="K">鑰匙</button><button data-t="D">門扉</button><button data-t="B">頭目</button><button data-t="C">寶箱</button><button data-t=".">只是路</button>
+</div>
+<ol class="log" id="log"></ol>
+</div>
+<div class="card">
+<h2>修改工具（點地圖用）</h2>
+<div class="tools" id="tools">
+<button data-t="auto" class="on">路／牆切換</button><button data-t=".">路</button><button data-t="#">牆</button><button data-t="">清除</button><button data-t="E">入口</button><button data-t="K">鑰匙</button><button data-t="D">門扉</button><button data-t="B">頭目</button><button data-t="C">寶箱</button><button data-t="me">移到這格</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h2>匯出給 Claude 算路線</h2>
+<div class="row">
+<button id="copyTxt" class="on">複製文字版</button>
+<button id="copyJson">複製備份（JSON）</button>
+<button id="dlJson">下載全部紀錄</button>
+</div>
+<p class="note">把「文字版」貼給 Claude，就能用這張圖算最佳路徑。探索同一個地下城的不同圖樣時，每次進去都建一筆新紀錄。</p>
+<details class="sec"><summary>匯入備份</summary>
+<textarea id="imp" placeholder="把複製的 JSON 貼在這裡"></textarea>
+<div class="row"><button id="impBtn">匯入</button></div>
+</details>
+</div>
+<p class="note"><a href="index.html">← 回首頁</a></p>
+</div>
+<div id="toast"></div>
+
+<script>
+const KEY='neko-explorer-v1';
+const DIRS={'上':[0,-1],'下':[0,1],'左':[-1,0],'右':[1,0]};
+const NAME={E:'入口',K:'鑰匙',D:'門扉',B:'頭目',C:'寶箱','.':'路','#':'牆'};
+let db={recs:[],cur:null}, tool='auto', mem=null;
+function load(){try{const s=localStorage.getItem(KEY);if(s)db=JSON.parse(s);}catch(e){} if(!db.recs)db={recs:[],cur:null};}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){toast('這個瀏覽器不能存檔，記得匯出備份');}}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1600);}
+function newRec(name,note){const r={id:Date.now().toString(36),dungeon:name||'未命名地下城',note:note||'',created:new Date().toISOString(),cells:{'0,0':'E'},pos:[0,0],moves:'',visited:['0,0'],events:[{step:0,t:'E'}],hist:[]};db.recs.unshift(r);db.cur=r.id;save();render();}
+function rec(){return db.recs.find(r=>r.id===db.cur)||null;}
+const k=(x,y)=>x+','+y;
+function snap(r){r.hist.push(JSON.stringify({cells:r.cells,pos:r.pos,moves:r.moves,visited:r.visited,events:r.events}));if(r.hist.length>300)r.hist.shift();}
+function setCell(r,x,y,t){const key=k(x,y);if(t===''||t==null)delete r.cells[key];else r.cells[key]=t;}
+function move(d){const r=rec();if(!r)return toast('先建立一筆紀錄');const [dx,dy]=DIRS[d];const nx=r.pos[0]+dx,ny=r.pos[1]+dy;const t=r.cells[k(nx,ny)];
+ if(t==='#')return toast('那邊是牆，走不過去');
+ snap(r);if(!t)r.cells[k(nx,ny)]='.';r.pos=[nx,ny];r.moves+=d;if(!r.visited.includes(k(nx,ny)))r.visited.push(k(nx,ny));save();render();}
+function undo(){const r=rec();if(!r||!r.hist.length)return toast('沒有可以復原的動作');Object.assign(r,JSON.parse(r.hist.pop()));save();render();}
+function markHere(t){const r=rec();if(!r)return;snap(r);const [x,y]=r.pos;r.cells[k(x,y)]=t;r.events=r.events.filter(e=>!(e.x===x&&e.y===y));if(t!=='.')r.events.push({step:r.moves.length,t,x,y});save();render();toast('這格標成：'+NAME[t]);}
+function cycle(cur){return cur==null?'.':cur==='.'?'#':cur==='#'?'':cur;}
+function editCell(x,y,fromPad){const r=rec();if(!r)return;const cur=r.cells[k(x,y)];
+ if(tool==='me'&&!fromPad){snap(r);r.pos=[x,y];if(!cur)r.cells[k(x,y)]='.';save();render();return;}
+ const t=(fromPad||tool==='auto')?cycle(cur):tool;
+ if(t==='#'&&x===r.pos[0]&&y===r.pos[1])return toast('你站的格子不能是牆');
+ snap(r);setCell(r,x,y,t);save();render();}
+function bounds(r){let xs=[r.pos[0]],ys=[r.pos[1]];for(const key in r.cells){const [x,y]=key.split(',').map(Number);xs.push(x);ys.push(y);}return{x0:Math.min(...xs)-1,x1:Math.max(...xs)+1,y0:Math.min(...ys)-1,y1:Math.max(...ys)+1};}
+function cls(t){return t==null?'u':t==='.'?'f':t==='#'?'w':t;}
+function render(){
+ const sel=document.getElementById('rec');sel.innerHTML=db.recs.map(r=>`<option value="${r.id}">${esc(r.dungeon)}${r.note?'・'+esc(r.note):''}（${r.moves.length} 步）</option>`).join('')||'<option>（還沒有紀錄）</option>';if(db.cur)sel.value=db.cur;
+ const r=rec();const map=document.getElementById('map'),nb=document.getElementById('nb');
+ if(!r){map.innerHTML='<p class="note">按「＋ 新紀錄」開始。進地下城時你站的位置就是入口 E。</p>';nb.innerHTML='';document.getElementById('sName').textContent='';document.getElementById('log').innerHTML='';return;}
+ document.getElementById('sName').textContent=r.dungeon+(r.note?'・'+r.note:'');document.getElementById('sSteps').textContent=r.moves.length;
+ document.getElementById('sCells').textContent=Object.keys(r.cells).length;
+ const b=bounds(r),W=b.x1-b.x0+1,H=b.y1-b.y0+1;const avail=Math.min(map.parentElement.clientWidth-30,640);const sz=Math.max(18,Math.min(40,Math.floor(avail/W)-2));
+ map.style.gridTemplateColumns=`repeat(${W},${sz}px)`;let h='';
+ for(let y=b.y0;y<=b.y1;y++)for(let x=b.x0;x<=b.x1;x++){const t=r.cells[k(x,y)];const me=x===r.pos[0]&&y===r.pos[1];const view=Math.abs(x-r.pos[0])<=1&&Math.abs(y-r.pos[1])<=1;
+  const lab='EKDBC'.includes(t)&&t?t:'';h+=`<div class="c ${cls(t)}${r.visited.includes(k(x,y))?' v':''}${view?' view':''}${me?' me':''}" style="width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.45)}px" data-x="${x}" data-y="${y}">${me?'':lab}</div>`;}
+ map.innerHTML=h;
+ let n='';for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const x=r.pos[0]+dx,y=r.pos[1]+dy,t=r.cells[k(x,y)];const me=!dx&&!dy;
+  n+=`<div class="c ${cls(t)}${me?' me':''}" data-x="${x}" data-y="${y}" ${me?'data-me="1"':''}>${me?'':(t&&'EKDBC'.includes(t)?t:t==='#'?'牆':t==='.'?'路':'')}</div>`;}
+ nb.innerHTML=n;
+ document.getElementById('log').innerHTML=r.events.slice().sort((a,b)=>a.step-b.step).map(e=>`<li>第 ${e.step} 步：${NAME[e.t]}</li>`).join('');
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function textOf(r){const b=bounds(r);let rows=[];for(let y=b.y0;y<=b.y1;y++){let s='';for(let x=b.x0;x<=b.x1;x++){const t=r.cells[k(x,y)];s+=(x===r.pos[0]&&y===r.pos[1]&&t!=='E'&&!'KDBC'.includes(t))?'@':(t==null?'~':t);}rows.push(s);}
+ const ev=r.events.slice().sort((a,b)=>a.step-b.step).map(e=>`第${e.step}步 ${NAME[e.t]}`).join('、');
+ return `地下城：${r.dungeon}\n紀錄：${r.note||'（無）'}\n步數：${r.moves.length}\n事件：${ev}\n地圖（# 牆 . 路 E 入口 K 鑰匙 D 門扉 B 頭目 C 寶箱 ~ 未探索 @ 目前位置）：\n${rows.join('\n')}\n移動紀錄：${r.moves||'（無）'}`;}
+async function copy(t,msg){try{await navigator.clipboard.writeText(t);toast(msg);}catch(e){const ta=document.getElementById('imp');ta.parentElement.open=true;ta.value=t;ta.select();toast('無法自動複製，已放到下方文字框，請手動複製');}}
+function strip(r){const c=Object.assign({},r);delete c.hist;return c;}
+document.getElementById('newBtn').onclick=()=>{document.getElementById('newForm').hidden=false;document.getElementById('dName').focus();};
+document.getElementById('cancelBtn').onclick=()=>{document.getElementById('newForm').hidden=true;};
+document.getElementById('createBtn').onclick=()=>{newRec(document.getElementById('dName').value.trim(),document.getElementById('dNote').value.trim());document.getElementById('newForm').hidden=true;document.getElementById('dNote').value='';};
+document.getElementById('rec').onchange=e=>{db.cur=e.target.value;save();render();};
+let delArm=0;document.getElementById('delBtn').onclick=e=>{const r=rec();if(!r)return;if(Date.now()-delArm>3000){delArm=Date.now();e.target.textContent='再按一次確認刪除';setTimeout(()=>e.target.textContent='刪除這筆',3000);return;}
+ db.recs=db.recs.filter(x=>x.id!==r.id);db.cur=db.recs[0]?db.recs[0].id:null;delArm=0;e.target.textContent='刪除這筆';save();render();toast('已刪除');};
+document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>move(b.dataset.mv));
+document.getElementById('undoBtn').onclick=undo;
+document.getElementById('here').onclick=e=>{const t=e.target.dataset.t;if(t!==undefined)markHere(t);};
+document.getElementById('tools').onclick=e=>{const t=e.target.dataset.t;if(t===undefined)return;tool=t;document.querySelectorAll('#tools button').forEach(b=>b.classList.toggle('on',b===e.target));};
+document.getElementById('map').onclick=e=>{const c=e.target.closest('.c');if(c)editCell(+c.dataset.x,+c.dataset.y,false);};
+document.getElementById('nb').onclick=e=>{const c=e.target.closest('.c');if(!c||c.dataset.me)return;editCell(+c.dataset.x,+c.dataset.y,true);};
+document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;const m={ArrowUp:'上',ArrowDown:'下',ArrowLeft:'左',ArrowRight:'右',w:'上',s:'下',a:'左',d:'右',W:'上',S:'下',A:'左',D:'右'}[e.key];
+ if(m){e.preventDefault();move(m);}else if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}});
+document.getElementById('copyTxt').onclick=()=>{const r=rec();if(!r)return toast('還沒有紀錄');copy(textOf(r),'已複製文字版，貼給 Claude 就好');};
+document.getElementById('copyJson').onclick=()=>{copy(JSON.stringify({v:1,recs:db.recs.map(strip)}),'已複製全部紀錄的備份');};
+document.getElementById('dlJson').onclick=()=>{const blob=new Blob([JSON.stringify({v:1,recs:db.recs.map(strip)},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='neko-explorer-backup.json';document.body.appendChild(a);a.click();a.remove();};
+document.getElementById('impBtn').onclick=()=>{try{const o=JSON.parse(document.getElementById('imp').value);const list=o.recs||(Array.isArray(o)?o:[o]);let n=0;
+ for(const r of list){if(!r||!r.cells)continue;r.hist=[];r.id=r.id||Date.now().toString(36)+n;if(!db.recs.some(x=>x.id===r.id)){db.recs.push(r);n++;}}
+ if(!db.cur&&db.recs[0])db.cur=db.recs[0].id;save();render();toast(`匯入 ${n} 筆紀錄`);}catch(e){toast('格式不對，請貼上用「複製備份」得到的內容');}};
+window.addEventListener('resize',render);
+load();render();
+</script>
+</body>
+</html>

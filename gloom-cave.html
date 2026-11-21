@@ -46,8 +46,8 @@ svg{width:100%;height:auto;display:block}
 <h1>幽暗洞窟・探索最佳路徑</h1>
 <p class="sub">幽暗洞窟沒有鑰匙和門扉，順序是：擊敗頭目 → 開寶箱。每一步是上下左右移動一格。資料取自貓娘冒險誌的 6 張探索圖樣（圖樣 1 和 4 是同一張圖）。</p>
 
-<nav class="ptabs" role="tablist"><button data-pt="steps">簡易步驟</button><button data-pt="routes">判斷流程與路線</button><button data-pt="compare">對照原始圖樣</button></nav>
-<section class="pt" id="pt-steps"><div class="card man"><h2>簡易步驟</h2>
+<nav class="ptabs" role="tablist"><button data-pt="routes">判斷流程與路線</button><button data-pt="steps">純文字版</button><button data-pt="compare">對照原始圖樣</button></nav>
+<section class="pt" id="pt-steps"><div class="card man"><h2>純文字版</h2>
 <p class="note" style="margin-top:0">6 張圖樣的入口都一樣，照下面編號做就好。箭頭就是要按的方向，一個箭頭走一格。</p>
 <div class="st"><b>①</b> 按 <span class="ar">→</span> 1 次，看<b>右上角</b>：
 <ul><li>是路 → 做 ②</li>
@@ -139,6 +139,6 @@ document.getElementById('cmps').innerHTML=h;}
 document.getElementById('ovl').onchange=renderCmp;document.getElementById('crd').onchange=renderCmp;renderCmp();
 function ptab(n,push){document.querySelectorAll('.ptabs button').forEach(b=>b.classList.toggle('on',b.dataset.pt===n));document.querySelectorAll('.pt').forEach(x=>x.classList.toggle('on',x.id==='pt-'+n));if(push){try{history.replaceState(null,'','#'+n)}catch(e){}}window.scrollTo(0,0);}
 document.querySelectorAll('.ptabs button').forEach(b=>b.onclick=()=>ptab(b.dataset.pt,true));
-function route(hh){const h=(hh!==undefined?hh:(location.hash||'')).slice(1);const m=h.match(/^map([1-7])$/);if(m){ptab('routes');show(m[1]);}else if(['steps','routes','compare'].includes(h)){ptab(h);}else{ptab('steps');}}
+function route(hh){const h=(hh!==undefined?hh:(location.hash||'')).slice(1);const m=h.match(/^map([1-7])$/);if(m){ptab('routes');show(m[1]);}else if(['steps','routes','compare'].includes(h)){ptab(h);}else{ptab('routes');}}
 const h0=location.hash||'';show('1');try{history.replaceState(null,'',h0||location.pathname)}catch(e){}route(h0);window.addEventListener('hashchange',()=>route());
 </script></body></html>

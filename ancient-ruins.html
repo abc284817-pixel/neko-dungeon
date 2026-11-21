@@ -47,8 +47,8 @@ svg{width:100%;height:auto;display:block}
 <h1>古城遺跡・探索最佳路徑</h1>
 <p class="sub">順序：取得鑰匙 → 開門扉 → 擊敗頭目 → 開寶箱。每一步是上下左右移動一格。資料取自貓娘冒險誌的 7 張探索圖樣。</p>
 
-<nav class="ptabs" role="tablist"><button data-pt="steps">簡易步驟</button><button data-pt="routes">判斷流程與路線</button><button data-pt="compare">對照原始圖樣</button></nav>
-<section class="pt" id="pt-steps"><div class="card man"><h2>簡易步驟</h2>
+<nav class="ptabs" role="tablist"><button data-pt="routes">判斷流程與路線</button><button data-pt="steps">純文字版</button><button data-pt="compare">對照原始圖樣</button></nav>
+<section class="pt" id="pt-steps"><div class="card man"><h2>純文字版</h2>
 <p class="note" style="margin-top:0">進地下城後先看入口九宮格，選左邊或右邊那一欄照著做。箭頭就是要按的方向，一個箭頭走一格。</p>
 <div class="guide">
 <div class="col"><h3>入口長這樣 <span class="g3"><i class="f"></i><i class="f"></i><i class="f"></i><i class="w"></i><i class="e">E</i><i class="w"></i><i class="w"></i><i class="w"></i><i class="w"></i></span><br><span class="note">上排三格是路</span></h3>
@@ -156,6 +156,6 @@ document.getElementById('cmps').innerHTML=h;}
 document.getElementById('ovl').onchange=renderCmp;document.getElementById('crd').onchange=renderCmp;renderCmp();
 function ptab(n,push){document.querySelectorAll('.ptabs button').forEach(b=>b.classList.toggle('on',b.dataset.pt===n));document.querySelectorAll('.pt').forEach(x=>x.classList.toggle('on',x.id==='pt-'+n));if(push){try{history.replaceState(null,'','#'+n)}catch(e){}}window.scrollTo(0,0);}
 document.querySelectorAll('.ptabs button').forEach(b=>b.onclick=()=>ptab(b.dataset.pt,true));
-function route(hh){const h=(hh!==undefined?hh:(location.hash||'')).slice(1);const m=h.match(/^map([1-7])$/);if(m){ptab('routes');show(m[1]);}else if(['steps','routes','compare'].includes(h)){ptab(h);}else{ptab('steps');}}
+function route(hh){const h=(hh!==undefined?hh:(location.hash||'')).slice(1);const m=h.match(/^map([1-7])$/);if(m){ptab('routes');show(m[1]);}else if(['steps','routes','compare'].includes(h)){ptab(h);}else{ptab('routes');}}
 const h0=location.hash||'';show('1');try{history.replaceState(null,'',h0||location.pathname)}catch(e){}route(h0);window.addEventListener('hashchange',()=>route());
 </script></body></html>
